@@ -1,6 +1,6 @@
 <?php
 // ================== KONFIGURASI SEKOLAH ==================
-$nomor_wa = "6281234567890";       // Ganti nomor WA sekolah (format: 62...)
+$nomor_wa = "6285780180323";       // Ganti nomor WA sekolah (format: 62...)
 $email_tujuan = "pembayaran@sekolah.sch.id"; // Email sekolah
 $direktori_upload = "bukti_bayar/";
 $file_data = "data/pembayaran.json";
@@ -19,7 +19,7 @@ function pesan($jenis, $teks) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') exit;
-if (empty($_POST['nama']) || empty($_POST['kelas']) || empty($_POST['metode']) || empty($_POST['jenis'])) {
+if (empty($_POST['nama']) || empty($_POST['kelas']) || empty($_POST['metode'])) {
     pesan('error', 'Lengkapi semua data wajib!');
 }
 
@@ -27,8 +27,21 @@ $nama = htmlspecialchars(trim($_POST['nama']));
 $kelas = htmlspecialchars($_POST['kelas']);
 $metode = htmlspecialchars($_POST['metode']);
 $total = (int)$_POST['total'];
+
+// Susun daftar jenis pembayaran
+$jenis_bayar_arr = $_POST['jenis'] ?? [];
+
+// Tambahkan pembayaran Lainnya jika diisi
+if (!empty($_POST['nama_lainnya']) && !empty($_POST['harga_lainnya']) && (int)$_POST['harga_lainnya'] > 0) {
+    $jenis_bayar_arr[] = htmlspecialchars($_POST['nama_lainnya']) . ' (Rp ' . number_format((int)$_POST['harga_lainnya'],0,',','.') . ')';
+}
+
+if (empty($jenis_bayar_arr)) {
+    pesan('error', 'Silakan pilih jenis pembayaran!');
+}
+
+$jenis_bayar = implode(', ', $jenis_bayar_arr);
 $total_rupiah = number_format($total, 0, ',', '.');
-$jenis_bayar = implode(', ', $_POST['jenis']);
 
 $nama_file = '';
 if ($metode !== 'Tunai') {
@@ -56,7 +69,7 @@ $entri_baru = [
     'waktu'    => date('Y-m-d H:i:s'),
     'nama'     => $nama,
     'kelas'    => $kelas,
-    'jenis'    => $_POST['jenis'],
+    'jenis'    => $jenis_bayar_arr,
     'total'    => $total,
     'metode'   => $metode,
     'bukti'    => $nama_file,
